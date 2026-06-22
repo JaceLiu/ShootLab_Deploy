@@ -1,0 +1,84 @@
+onnx_path:   "policy-obs-aic.onnx"
+motion_path: "freekick_motion.npz"
+
+control_dt:      0.02     # 50 Hz control (sim: 2ms * 10 decimation)
+warmup_steps:    10       # interpolation steps from current pose to motion t=0
+clip_actions:    6.0      # fallback raw-action clip for joints not listed below
+action_clip:
+  .*_hip_yaw_joint:   [-6.0, 6.0]
+  .*_hip_roll_joint:  [-6.0, 6.0]
+  .*_hip_pitch_joint: [-6.0, 6.0]
+  .*_knee_joint:      [-6.0, 6.0]
+  .*_ankle_pitch_joint: [-3.0, 3.0]
+  .*_ankle_roll_joint:  [-0.6, 0.6]
+  waist_yaw_joint:    [-3.0, 3.0]
+  waist_roll_joint:   [-1.2, 1.2]
+  waist_pitch_joint:  [-1.2, 1.2]
+  .*_shoulder_pitch_joint: [-2.0, 2.0]
+  .*_shoulder_roll_joint:  [-3.0, 3.0]
+  .*_shoulder_yaw_joint:   [-3.0, 3.0]
+  .*_elbow_joint:          [-3.0, 3.0]
+  .*_wrist_roll_joint:     [-3.0, 3.0]
+  .*_wrist_pitch_joint:    [-3.0, 3.0]
+  .*_wrist_yaw_joint:      [-3.0, 3.0]
+
+# false = simulation (ball_pos from MuJoCo world frame)
+# true  = real robot (ball_pos from DDS, already in pelvis body frame)
+use_body_frame_ball: false
+
+# When ball_valid is false and sensor ball is ~zero: use this pelvis-frame default for
+# the soccer_pos_b observation (not raw [0,0,0]). Omit key to disable substitution.
+ball_obs_default_when_lost: [2.0, 0.0, -0.7]
+ball_obs_lost_norm_max: 1.0e-3
+
+# Optional: clip motion to a specific time window (seconds).
+# If omitted, the full motion sequence is used.
+# motion_start_s:  0.0
+# motion_end_s:   10.0
+
+# Target source:
+# - fixed:    use `target_pos`
+# - apriltag: use rt/target_state (AprilTag / target detector) on real robot
+target_source: fixed
+
+# If target_source=apriltag and the tag is lost:
+# - true:  keep the last seen target direction in a yaw/world cache and
+#          rotate it back into the current pelvis frame using IMU yaw
+# - false: do not hold with IMU
+target_hold_on_loss_with_imu: true
+
+# If target_source=apriltag but no valid target has been seen yet (or IMU hold is disabled),
+# fall back to the configured fixed target_pos.
+target_use_fixed_fallback: true
+
+# Fixed target:
+# - Simulation: world-frame target position [x, y, z]
+# - Real robot: entry时刻记录的 pelvis/body-frame target offset
+target_pos: [5.0, 0.0, 0.115]
+
+# All arrays below are in MuJoCo DFS joint order (== hardware order).
+# Fill in from ONNX metadata after training.
+
+default_joint_pos: [-0.312,  0.000,  0.000,  0.669, -0.363,  0.000,
+                    -0.312,  0.000,  0.000,  0.669, -0.363,  0.000,
+                     0.000,  0.000,  0.000,
+                     0.200,  0.200,  0.000,  0.600,  0.000,  0.000,  0.000,
+                     0.200, -0.200,  0.000,  0.600,  0.000,  0.000,  0.000]
+
+action_scale: [0.548, 0.351, 0.548, 0.351, 0.439, 0.439,
+               0.548, 0.351, 0.548, 0.351, 0.439, 0.439,
+               0.548, 0.439, 0.439,
+               0.439, 0.439, 0.439, 0.439, 0.439, 0.075, 0.075,
+               0.439, 0.439, 0.439, 0.439, 0.439, 0.075, 0.075]
+
+kps: [ 40.179,  99.098,  40.179,  99.098,  28.501,  28.501,
+       40.179,  99.098,  40.179,  99.098,  28.501,  28.501,
+       40.179,  28.501,  28.501,
+       14.251,  14.251,  14.251,  14.251,  14.251,  16.778,  16.778,
+       14.251,  14.251,  14.251,  14.251,  14.251,  16.778,  16.778]
+
+kds: [  2.558,   6.309,   2.558,   6.309,   1.814,   1.814,
+        2.558,   6.309,   2.558,   6.309,   1.814,   1.814,
+        2.558,   1.814,   1.814,
+        0.907,   0.907,   0.907,   0.907,   0.907,   1.068,   1.068,
+        0.907,   0.907,   0.907,   0.907,   0.907,   1.068,   1.068]

@@ -1,0 +1,24 @@
+# Core dependencies
+numpy==1.20.0
+onnx
+onnxruntime
+mujoco
+hydra-core
+omegaconf
+pygame
+scipy
+pyyaml
+
+# Real-robot deployment (DDS communication)
+# Install via: pip install cyclonedds
+cyclonedds
+
+# PyTorch — install via conda (see README for exact command):
+#   conda install pytorch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 pytorch-cuda=12.1 -c pytorch -c nvidia
+
+# Unitree SDK — install via git clone (see README):
+#   git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
+#   cd unitree_sdk2_python && pip install -e .
+
+# Onboard perception node only (ROS2, not pip-installable):
+#   rclpy, livox_ros_driver2, unitree_hg

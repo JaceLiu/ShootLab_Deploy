@@ -1,0 +1,23 @@
+xml_path: "g1_description/scene_with_ball.xml"
+simulation_dt: 0.002
+control_decimation: 10
+ball_sensor_hz: 10   # simulated ball sensor update rate (10 Hz = every 5 control steps)
+ghost_enabled: true
+ghost_rgba: [0.2, 0.9, 0.4, 0.2]
+# Gamepad shortcut: release R3 to reset the ball to this state.
+ball_reset_pos_w: [3.0, 0.0, 0.115]
+ball_reset_vel_w: [-2.5, 0.0, 0.0]
+ball_reset_quat_w: [1.0, 0.0, 0.0, 0.0]
+ball_reset_ang_vel_w: [0.0, 0.0, 0.0]
+tau_limit: [88, 139, 88, 139, 50, 50,
+            88, 139, 88, 139, 50, 50,
+            88, 50, 50,
+            25, 25, 25, 25, 25, 5, 5,
+            25, 25, 25, 25, 25, 5, 5
+           ]
+
+logging:
+  enabled: true      # set true to record a freekick log
+  log_dir: "logs"
+  tag:     "freekick"
+  states:  ["SKILL_FREEKICK", "LOCOMODE", "SKILL_BEYONDMIMIC", "SKILL_BEYONDMIMIC_MJ", "SKILL_STANDUP_MJ", "SKILL_PINOCCHIO_1_6_MJ", "SKILL_AMP"]  # FSM states to record

@@ -1,0 +1,15 @@
+net: enp5s0f1
+num_joints: 29
+
+lowcmd_topic: "rt/lowcmd"
+lowstate_topic: "rt/lowstate"
+
+control_dt: 0.02
+
+error_over_time: 5
+
+logging:
+  enabled: true      # set true to record a freekick log
+  log_dir: "logs"
+  tag:     "freekick"
+  states:  ["SKILL_FREEKICK", "LOCOMODE", "SKILL_BEYONDMIMIC", "SKILL_BEYONDMIMIC_MJ", "SKILL_STANDUP_MJ", "SKILL_PINOCCHIO_1_6_MJ", "SKILL_AMP"]  # FSM states to record

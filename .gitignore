@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+bridge/generated/
+.tmp_pkg/
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Outputs
+outputs/
+
+# Logs
+logs/
+
+# Third-party SDKs (install separately)
+unitree_sdk2_python/
+
+# Scripts (local utility scripts)
+# scripts/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model weights and compiled binaries (large, hardware-specific).
+# Policy ONNX files live under policy/*/model/ and are distributed out-of-band.
+*.pt
+*.onnx
+*.engine
+# ...except the released FreeKick policy weights, which ship with the repo.
+!policy/robonaldo/model/policy-obs-aic.onnx
+
+# Local-only docs with sensitive infrastructure details (never publish)
+docs/vps_reverse_tunnel_zh.md
+
+# Video clips stay out of the repo (README demos are GitHub user-attachments)
+*.mp4
+*.webm
+recordings/*.mp4
+
+.tmp_pkg/

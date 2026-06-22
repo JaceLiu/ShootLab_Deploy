@@ -1,0 +1,68 @@
+model_path: "amp_0309_1.onnx"
+
+# ── Observation ───────────────────────────────────────────────────────────────
+# 96-dim per frame × 4 frames history = 384-dim total input
+obs_dim_per_frame: 96
+history_len: 4
+ang_vel_scale: 1.0
+dof_pos_scale: 1.0
+dof_vel_scale: 1.0
+action_scale: 0.25
+
+# ── Velocity command limits ───────────────────────────────────────────────────
+# walk mode (kept for reference, not the default deploy shortcut)
+cmd_range:
+  lin_vel_x:  [-0.5, 1.0]
+  lin_vel_y:  [-0.01, 0.01]
+  ang_vel_z:  [-1.57, 1.57]
+
+# run mode (default when entering AMP from deploy shortcuts)
+cmd_range_fast:
+  lin_vel_x:  [-1.5, 3.0]
+  lin_vel_y:  [-0.01, 0.01]
+  ang_vel_z:  [-1.57, 1.57]
+
+cmd_smooth: 0.60   # EMA coefficient for command smoothing (tuned for 50 Hz; original C++ used 0.95 @ 500 Hz)
+
+# ── Safety ───────────────────────────────────────────────────────────────────
+safe_tilt_threshold: 0.6   # |proj_gravity_z - (-1)| threshold; triggers exit if exceeded
+
+# ── Joint mapping (policy DOF order → motor index) ───────────────────────────
+# Same ordering as wbc_fsm dof_mapping and LocoMode joint2motor_idx
+joint2motor_idx: [ 0,  6, 12,
+                   1,  7, 13,
+                   2,  8, 14,
+                   3,  9, 15, 22,
+                   4, 10, 16, 23,
+                   5, 11, 17, 24,
+                          18, 25,
+                          19, 26,
+                          20, 27,
+                          21, 28]
+
+# ── Default joint positions (motor order, motor 0–28) ────────────────────────
+# From wbc_fsm/include/FSM/State_Amp.h: _default_dof_pos[NUM_DOF]
+# Note: indexed by motor index (same as dof_mapping[i] in C++)
+default_dof_pos: [-0.312,  0.0,   0.0,   0.669, -0.363,  0.0,
+                  -0.312,  0.0,   0.0,   0.669, -0.363,  0.0,
+                   0.0,    0.0,   0.0,
+                   0.2,    0.2,   0.0,   0.6,   0.0,    0.0,  0.0,
+                   0.2,   -0.2,   0.0,   0.6,   0.0,    0.0,  0.0]
+
+# ── Motor gains (motor order, motor 0–28) ────────────────────────────────────
+# Computed from wbc_fsm ArmatureConstants:
+#   NATURAL_FREQ = 10 Hz × 2π = 62.832 rad/s,  DAMPING_RATIO = 2.0
+#   Kp = ARMATURE × NATURAL_FREQ²,  Kd = 2 × DAMPING_RATIO × ARMATURE × NATURAL_FREQ
+#
+# Motor groups: legs 0-11, waist 12-14, left arm 15-21, right arm 22-28
+kps: [ 99.10, 99.10, 40.18, 99.10, 28.50, 28.50,   # motor  0-5  (left leg)
+       99.10, 99.10, 40.18, 99.10, 28.50, 28.50,   # motor  6-11 (right leg)
+       40.18, 28.50, 28.50,                         # motor 12-14 (waist)
+       14.25, 14.25, 14.25, 14.25, 14.25,  8.61,  8.61,  # motor 15-21 (left arm)
+       14.25, 14.25, 14.25, 14.25, 14.25,  8.61,  8.61]  # motor 22-28 (right arm)
+
+kds: [  6.309,  6.309,  2.558,  6.309,  1.814,  1.814,  # motor  0-5
+        6.309,  6.309,  2.558,  6.309,  1.814,  1.814,  # motor  6-11
+        2.558,  1.814,  1.814,                           # motor 12-14
+        0.907,  0.907,  0.907,  0.907,  0.907,  0.548,  0.548,  # motor 15-21
+        0.907,  0.907,  0.907,  0.907,  0.907,  0.548,  0.548]  # motor 22-28

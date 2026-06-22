@@ -1,0 +1,19 @@
+xml_path: "g1_description/g1_liao.xml"
+# xml_path: "g1_description/scene.xml"
+# xml_path: "g1_description/g1_29dof_LieDown.xml"
+simulation_dt: 0.002
+control_decimation: 10
+ghost_enabled: true        # show reference motion ghost; toggle with L3 at runtime
+ghost_rgba: [0.2, 0.9, 0.4, 0.2]  # [R, G, B, alpha]  lower alpha = more transparent
+tau_limit: [88, 139, 88, 139, 50, 50,
+            88, 139, 88, 139, 50, 50,
+            88, 50, 50,
+            25, 25, 25, 25, 25, 5, 5,
+            25, 25, 25, 25, 25, 5, 5
+           ]
+
+logging:
+  enabled: false      # set true to record a freekick log
+  log_dir: "logs"
+  tag:     "freekick"
+  states:  ["SKILL_FREEKICK", "LOCOMODE", "SKILL_BEYONDMIMIC", "SKILL_BEYONDMIMIC_MJ", "SKILL_STANDUP_MJ", "SKILL_PINOCCHIO_1_6_MJ", "SKILL_AMP"]  # FSM states to record

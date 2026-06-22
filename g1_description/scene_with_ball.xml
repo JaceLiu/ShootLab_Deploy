@@ -1,0 +1,27 @@
+<mujoco model="g1 scene with ball">
+  <include file="g1_liao.xml"/>
+
+  <statistic center="1.0 0.7 1.0" extent="0.8"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0.9 0.9 0.9"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="-140" elevation="-20"/>
+  </visual>
+
+  <worldbody>
+    <light pos="1 0 3.5" dir="0 0 -1" directional="true"/>
+
+    <!-- Soccer ball: radius=0.115m, mass=0.41kg, placed ~1m in front of robot -->
+    <body name="ball" pos="1.0 0.0 0.115">
+      <joint name="ball_free" type="free" damping="0.3"/>
+      <inertial mass="0.41" diaginertia="0.002 0.002 0.002" pos="0 0 0"/>
+      <geom name="ball_geom" type="sphere" size="0.115" rgba="0.7 0.8 0.9 1"
+            friction="0.2 0.005 0.002" solref="0.001 0.05" solimp="0.95 0.99 0.001" />
+    </body>
+  </worldbody>
+
+  <contact>
+    <pair name="ball_floor" geom1="ball_geom" geom2="floor" condim="6" friction="0.05 0.0003 0.00002" solref="0.001 1" solimp="0.95 0.99 0.001"/>
+  </contact>
+</mujoco>

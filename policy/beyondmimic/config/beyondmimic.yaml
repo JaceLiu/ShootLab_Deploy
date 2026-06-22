@@ -1,0 +1,51 @@
+onnx_path:   "policy_kick-new_4000.onnx"   # 154-dim policy (Wo-State-Estimation)
+motion_path: "kick-new.npz"             # NPZ motion file (dance, ~11384 frames @ 50fps)
+
+# onnx_path:   "policy_fallAndGetUp2_subject2_4000.onnx"   # 154-dim policy (Wo-State-Estimation)
+# motion_path: "fallAndGetUp2_subject2.npz"             # NPZ motion file (dance, ~11384 frames @ 50fps)
+
+control_dt:      0.02     # 50 Hz control (sim: 3ms * 7 decimation)
+warmup_steps:    10       # interpolation steps from current pose to motion t=0 (0.6 sec)
+clip_actions:    10.0      # PPO actions rarely exceed ±3; prevents runaway divergence
+
+# All arrays below are in MuJoCo joint order:
+#   [l_hip_p, l_hip_r, l_hip_y, l_knee, l_ank_p, l_ank_r,
+#    r_hip_p, r_hip_r, r_hip_y, r_knee, r_ank_p, r_ank_r,
+#    waist_y, waist_r, waist_p,
+#    l_sho_p, l_sho_r, l_sho_y, l_elbow, l_wrist_r, l_wrist_p, l_wrist_y,
+#    r_sho_p, r_sho_r, r_sho_y, r_elbow, r_wrist_r, r_wrist_p, r_wrist_y]
+
+# default_joint_pos: from ONNX metadata default_joint_pos (converted to MuJoCo order)
+default_joint_pos: [-0.312,  0.000,  0.000,  0.669, -0.363,  0.000,
+                    -0.312,  0.000,  0.000,  0.669, -0.363,  0.000,
+                     0.000,  0.000,  0.000,
+                     0.200,  0.200,  0.000,  0.600,  0.000,  0.000,  0.000,
+                     0.200, -0.200,  0.000,  0.600,  0.000,  0.000,  0.000]
+
+# action_scale: from ONNX metadata action_scale (converted to MuJoCo order)
+action_scale: [0.548, 0.351, 0.548, 0.351, 0.439, 0.439,
+               0.548, 0.351, 0.548, 0.351, 0.439, 0.439,
+               0.548, 0.439, 0.439,
+               0.439, 0.439, 0.439, 0.439, 0.439, 0.075, 0.075,
+               0.439, 0.439, 0.439, 0.439, 0.439, 0.075, 0.075]
+
+# tau_limit: from G1 actuator specs
+tau_limit: [88,  139,  88,  139,  50,  50,
+            88,  139,  88,  139,  50,  50,
+            88,   50,  50,
+            25,   25,  25,   25,  25,   5,   5,
+            25,   25,  25,   25,  25,   5,   5]
+
+# kps / kds: from ONNX metadata joint_stiffness/joint_damping (training ImplicitActuator gains),
+# converted from Isaac Lab joint order to MuJoCo joint order.
+kps: [ 40.179,  99.098,  40.179,  99.098,  28.501,  28.501,
+       40.179,  99.098,  40.179,  99.098,  28.501,  28.501,
+       40.179,  28.501,  28.501,
+       14.251,  14.251,  14.251,  14.251,  14.251,  16.778,  16.778,
+       14.251,  14.251,  14.251,  14.251,  14.251,  16.778,  16.778]
+
+kds: [  2.558,   6.309,   2.558,   6.309,   1.814,   1.814,
+        2.558,   6.309,   2.558,   6.309,   1.814,   1.814,
+        2.558,   1.814,   1.814,
+        0.907,   0.907,   0.907,   0.907,   0.907,   1.068,   1.068,
+        0.907,   0.907,   0.907,   0.907,   0.907,   1.068,   1.068]
