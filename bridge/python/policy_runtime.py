@@ -38,7 +38,7 @@ class PolicyRuntime:
 
         self.state_cmd = StateAndCmd(self.num_joints)
         self.policy_output = PolicyOutput(self.num_joints)
-        self.FSM_controller = FSM(self.state_cmd, self.policy_output)
+        self.FSM_controller = FSM(self.state_cmd, self.policy_output, runtime_mode="real")
 
         self.bridge_state_sub = BridgeStateSubscriber(
             domain_id=config.bridge_domain_id,
@@ -138,8 +138,7 @@ class PolicyRuntime:
 
         if self.remote_controller.is_button_pressed(KeyMap.F1):
             self.state_cmd.skill_cmd = FSMCommand.PASSIVE
-
-        if self.remote_controller.is_button_pressed(KeyMap.start):
+        elif self.remote_controller.is_button_pressed(KeyMap.start):
             self.state_cmd.skill_cmd = FSMCommand.POS_RESET
         elif self.remote_controller.is_button_pressed(KeyMap.B):
             self.state_cmd.skill_cmd = FSMCommand.LOCO
@@ -147,6 +146,8 @@ class PolicyRuntime:
             self.state_cmd.skill_cmd = FSMCommand.CMD_AMP
         elif self.remote_controller.is_button_pressed(KeyMap.R1):
             self.state_cmd.skill_cmd = FSMCommand.CMD_FREEKICK
+        elif self.remote_controller.is_button_pressed(KeyMap.Y):
+            self.state_cmd.skill_cmd = FSMCommand.CMD_SHOOTLAB
         elif self.remote_controller.is_button_pressed(KeyMap.down):
             self.state_cmd.skill_cmd = FSMCommand.CMD_BEYONDMIMIC_MJ
         elif self.remote_controller.is_button_pressed(KeyMap.up):

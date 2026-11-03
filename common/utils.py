@@ -15,6 +15,7 @@ class FSMStateName(Enum):
     SKILL_STANDUP_MJ = 15
     SKILL_AMP = 16
     SKILL_PINOCCHIO_1_6_MJ = 17
+    SKILL_SHOOTLAB = 18
 
 @unique
 class FSMCommand(Enum):
@@ -28,6 +29,7 @@ class FSMCommand(Enum):
     CMD_STANDUP_MJ = 15
     CMD_AMP = 16
     CMD_PINOCCHIO_1_6_MJ = 19
+    CMD_SHOOTLAB = 20
 
 
 

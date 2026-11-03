@@ -7,6 +7,7 @@ from policy.beyondmimic.BeyondMimic import BeyondMimic
 from policy.beyondmimic_mj.BeyondMimicMJ import BeyondMimicMJ
 from policy.robonaldo.FreeKick import FreeKick
 from policy.amp.Amp import Amp
+from policy.shootlab.ShootLabShoot import ShootLabShoot
 from FSM.FSMState import *
 import time
 from common.ctrlcomp import *
@@ -18,14 +19,19 @@ class FSMMode(Enum):
     NORMAL = 2
 
 class FSM:
-    def __init__(self, state_cmd:StateAndCmd, policy_output:PolicyOutput):
+    def __init__(
+        self,
+        state_cmd: StateAndCmd,
+        policy_output: PolicyOutput,
+        runtime_mode: str = "sim",
+    ):
         self.state_cmd = state_cmd
         self.policy_output = policy_output
         self.cur_policy : FSMState
         self.next_policy : FSMState
         self.sim_counter = 0
         self.FSMmode = FSMMode.NORMAL
-        
+
         self.passive_mode = PassiveMode(state_cmd, policy_output)       # 阻尼保护模式
         self.fixed_pose_1 = FixedPose(state_cmd, policy_output)         
         self.loco_policy = LocoMode(state_cmd, policy_output)
@@ -42,9 +48,10 @@ class FSM:
         )
         self.freekick_policy = FreeKick(state_cmd, policy_output)
         self.amp_policy = Amp(state_cmd, policy_output)
+        self.shootlab_policy = ShootLabShoot(state_cmd, policy_output, runtime_mode)
 
         print("initalized all policies!!!")
-        
+
         self.cur_policy = self.passive_mode             # 当前policy
         print("current policy is ", self.cur_policy.name_str)
         
@@ -52,7 +59,24 @@ class FSM:
         
     def run(self):
         start_time = time.time()
-        if(self.FSMmode == FSMMode.NORMAL): 
+        if self.FSMmode == FSMMode.NORMAL:
+            if (
+                self.state_cmd.skill_cmd == FSMCommand.CMD_SHOOTLAB
+                and self.cur_policy.name != FSMStateName.SKILL_SHOOTLAB
+            ):
+                if (
+                    self.cur_policy.name
+                    not in {FSMStateName.FIXEDPOSE, FSMStateName.LOCOMODE}
+                    or not self.shootlab_policy.activation_ready()
+                ):
+                    print("[ShootLab] activation rejected: enter FixedPose/Loco with a valid ball first.")
+                    self.state_cmd.skill_cmd = FSMCommand.INVALID
+                else:
+                    self.state_cmd.skill_cmd = FSMCommand.INVALID
+                    self.FSMmode = FSMMode.CHANGE
+                    self.cur_policy.exit()
+                    self.get_next_policy(FSMStateName.SKILL_SHOOTLAB)
+                    return
             self.cur_policy.run()
             nextPolicyName = self.cur_policy.checkChange()
             
@@ -101,8 +125,7 @@ class FSM:
             self.cur_policy = self.amp_policy
         elif((policy_name == FSMStateName.SKILL_PINOCCHIO_1_6_MJ)):
             self.cur_policy = self.pinocchio_1_6_mj_policy
+        elif((policy_name == FSMStateName.SKILL_SHOOTLAB)):
+            self.cur_policy = self.shootlab_policy
         else:
             pass
-            
-        
-        

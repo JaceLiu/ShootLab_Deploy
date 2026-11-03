@@ -50,6 +50,7 @@ Expected:
 
 Only after Stage 3 is stable, re-enable:
 - `FreeKick`
+- `ShootLabShoot` (`Y`, with `rt/ball_state` and optional `rt/target_state`)
 - `BeyondMimic`
 - `BeyondMimicMJ`
 - `AMP`

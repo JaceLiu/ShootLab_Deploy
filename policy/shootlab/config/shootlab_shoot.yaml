@@ -1,0 +1,17 @@
+onnx_path: "policy-shootlab-v24-v34-30000.onnx"
+metadata_path: "policy-shootlab-v24-v34-30000_meta.json"
+manifest_path: "MODEL_MANIFEST.json"
+
+control_dt: 0.02
+warmup_steps: 10
+policy_duration_s: 5.0
+ball_stale_timeout_s: 0.3
+# Keep false to preserve the trained policy loop. The robot's joint limits still
+# constrain physical motion; enable only for a deliberate conservative profile.
+clip_joint_targets: false
+
+# Real-robot target source. Simulation always uses target_pos as a world point.
+target_source: "apriltag"
+target_pos: [5.0, 0.0, 0.115]
+target_hold_on_loss_with_imu: true
+target_use_fixed_fallback: true

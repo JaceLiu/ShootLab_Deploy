@@ -65,7 +65,7 @@ class Controller:
         
         self.state_cmd = StateAndCmd(self.num_joints)                   # 定义了机器人的state
         self.policy_output = PolicyOutput(self.num_joints)              # 定义了action, kp, kd
-        self.FSM_controller = FSM(self.state_cmd, self.policy_output)
+        self.FSM_controller = FSM(self.state_cmd, self.policy_output, runtime_mode="real")
 
         # Ball state subscriber (DDS, from on-robot ball_detector_service)
         self.ball_sub = BallStateSubscriber(domain_id=0)
@@ -145,10 +145,8 @@ class Controller:
             # PASSIVE: safety command — always overrides any pending command
             if self.remote_controller.is_button_pressed(KeyMap.F1):             # F1阻尼保护模式
                 self.state_cmd.skill_cmd = FSMCommand.PASSIVE
-
             # All other skill commands: latched — only accepted when FSM has cleared the previous one.
-            # elif self.state_cmd.skill_cmd == FSMCommand.INVALID:
-            if self.remote_controller.is_button_pressed(KeyMap.start):
+            elif self.remote_controller.is_button_pressed(KeyMap.start):
                 self.state_cmd.skill_cmd = FSMCommand.POS_RESET
             elif self.remote_controller.is_button_pressed(KeyMap.B):            # Loco, B
                 self.state_cmd.skill_cmd = FSMCommand.LOCO
@@ -156,6 +154,8 @@ class Controller:
                 self.state_cmd.skill_cmd = FSMCommand.CMD_AMP
             elif self.remote_controller.is_button_pressed(KeyMap.R1):           # FreeKick, R1
                 self.state_cmd.skill_cmd = FSMCommand.CMD_FREEKICK
+            elif self.remote_controller.is_button_pressed(KeyMap.Y):            # ShootLab, Y
+                self.state_cmd.skill_cmd = FSMCommand.CMD_SHOOTLAB
             elif self.remote_controller.is_button_pressed(KeyMap.down):         # BeyondMimicMJ, Down
                 self.state_cmd.skill_cmd = FSMCommand.CMD_BEYONDMIMIC_MJ
             elif self.remote_controller.is_button_pressed(KeyMap.up):           # StandUpMJ, Up
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     config = Config()
     # Initialize DDS communication
     ChannelFactoryInitialize(0, config.net)
-    
+
     controller = Controller(config)
     
     while True:
@@ -275,4 +275,3 @@ if __name__ == "__main__":
     create_damping_cmd(controller.low_cmd)
     controller.send_cmd(controller.low_cmd)
     print("Exit")
-    
