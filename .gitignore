@@ -17,6 +17,9 @@ env/
 
 # Outputs
 outputs/
+calibration_data/
+calibration_data_ros1/
+*.mcap
 
 # Logs
 logs/

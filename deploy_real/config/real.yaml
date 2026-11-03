@@ -1,4 +1,4 @@
-net: enp5s0f1
+net: enP8p1s0
 num_joints: 29
 
 lowcmd_topic: "rt/lowcmd"

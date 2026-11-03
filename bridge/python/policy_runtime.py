@@ -100,7 +100,9 @@ class PolicyRuntime:
             self.remote_controller.set(raw[:24])
 
     def _apply_remote_commands(self):
-        if self.remote_controller.is_button_pressed(KeyMap.select):
+        # Terminate action moved from 'select' to 'F2', because 'select' now
+        # performs the old 'start' role (POS_RESET) below.
+        if self.remote_controller.is_button_pressed(KeyMap.F2):
             self.exit_requested = True
             return
 
@@ -139,7 +141,7 @@ class PolicyRuntime:
         if self.remote_controller.is_button_pressed(KeyMap.F1):
             self.state_cmd.skill_cmd = FSMCommand.PASSIVE
 
-        if self.remote_controller.is_button_pressed(KeyMap.start):
+        if self.remote_controller.is_button_pressed(KeyMap.select):  # 回 FixedPose（原 start 键，改用 select）
             self.state_cmd.skill_cmd = FSMCommand.POS_RESET
         elif self.remote_controller.is_button_pressed(KeyMap.B):
             self.state_cmd.skill_cmd = FSMCommand.LOCO

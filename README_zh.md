@@ -105,6 +105,7 @@ pip install -e .
 - 相机模块手册：`onboard/perception/camera/README.md`
 - LiDAR 模块手册：`onboard/perception/lidar/README.md`
 - 感知架构：`onboard/docs/PERCEPTION_ARCHITECTURE.md`
+- LiDAR-IMU 标定 bag 采集：`tools/lidar_imu_calibration/README.md`
 
 ---
 ## 运行代码
@@ -127,7 +128,7 @@ python deploy_mujoco/deploy_mujoco.py --config-name mujoco_freekick
 | 模式名称            | 触发按键                       | 描述                                                                 |
 |--------------------|-------------------------------|----------------------------------------------------------------------|
 | **PassiveMode**    | F1（真机）/ 松开 L2（仿真）    | 阻尼保护模式                                                         |
-| **FixedPose**      | Start                         | 位控恢复至默认关节值                                                 |
+| **FixedPose**      | Select（真机）/ Start（仿真）  | 位控恢复至默认关节值                                                 |
 | **LocoMode**       | B                             | 用于稳定行走的控制模式                                               |
 | **AMP**            | A                             | AMP 运动策略（默认进入 run 模式）                                    |
 | **FreeKick**          | R1                            | 踢球得分策略（547维obs，5帧历史，需配合机载雷达感知）               |
@@ -185,7 +186,7 @@ python deploy_mujoco/deploy_mujoco.py
    ```bash
    bash tools/start_tmux_layout.sh
    ```
-   在 `deploy_policy` 窗格中按 **Start** 进入位控模式。
+   在 `deploy_policy` 窗格中按 **Select** 进入位控模式。
 
    也可分窗口手动启动：
    ```bash
@@ -202,6 +203,8 @@ python deploy_mujoco/deploy_mujoco.py
    **简单模式（直连 以太网，无 Orin）**：`python deploy_real/deploy_real.py`
 
 3. 后续单键切换与仿真保持一致：`A / B / D-pad DOWN / D-pad UP / R2 / R1`。
+   真机上 **FixedPose（位控）** 用 **Select** 键进入，**终止程序** 绑定在 **F2** 键
+   （本机不使用 `Start` 键）。
    任意时刻可按 **F1** 进入阻尼保护模式（PassiveMode）。
 
 4. **FreeKick 踢球策略（R1）真机额外步骤**：FreeKick 策略依赖机载球感知，需在启动前先运行感知服务；LiDAR / camera raw 观测由 `onboard/perception/ball_fuser.py` 融合，并发布最终 DDS topic `rt/ball_state`。未启动感知服务时请勿激活 FreeKick 策略。
@@ -227,7 +230,7 @@ python deploy_mujoco/deploy_mujoco.py
 ### 2. Mimic策略可靠性警告
 Mimic策略不保证100%成功率，特别是在湿滑/沙地等复杂地面上。若出现机器人失控情况：
 - 按下`F1`键激活**阻尼保护模式**(PassiveMode)
-- 按下`Select`键立即终止控制程序
+- 按下 **F2** 键立即终止控制程序
 
 ### 3. 当前保留策略的真机提示
 当前部署入口已简化为 `LocoMode / AMP / FreeKick / BeyondMimicMJ / StandUpMJ / Pinocchio1.6MJ`。
@@ -250,6 +253,5 @@ Mimic策略不保证100%成功率，特别是在湿滑/沙地等复杂地面上�
 
 本仓库是 [**RoboNaldo**](https://opendrivelab.com/RoboNaldo/) 的部署仓库 ——
 训练代码见 [opendrivelab/RoboNaldo](https://github.com/opendrivelab/RoboNaldo)。
-
 
 

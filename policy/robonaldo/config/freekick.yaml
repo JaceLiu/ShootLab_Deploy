@@ -24,7 +24,7 @@ action_clip:
 
 # false = simulation (ball_pos from MuJoCo world frame)
 # true  = real robot (ball_pos from DDS, already in pelvis body frame)
-use_body_frame_ball: false
+use_body_frame_ball: true
 
 # When ball_valid is false and sensor ball is ~zero: use this pelvis-frame default for
 # the soccer_pos_b observation (not raw [0,0,0]). Omit key to disable substitution.

@@ -113,7 +113,9 @@ class Controller:
     def zero_torque_state(self):
         print("Enter zero torque state.")
         print("Waiting for the start signal...")
-        while self.remote_controller.button[KeyMap.start] != 1:
+        # NOTE: 'start' button remapped to 'select' (start is broken on this
+        # controller). Hold Select to release the zero-torque gate.
+        while self.remote_controller.button[KeyMap.select] != 1:
             create_zero_cmd(self.low_cmd)
             self.send_cmd(self.low_cmd)
             time.sleep(self.config.control_dt)
@@ -148,7 +150,7 @@ class Controller:
 
             # All other skill commands: latched — only accepted when FSM has cleared the previous one.
             # elif self.state_cmd.skill_cmd == FSMCommand.INVALID:
-            if self.remote_controller.is_button_pressed(KeyMap.start):
+            if self.remote_controller.is_button_pressed(KeyMap.select):  # 回 FixedPose（原 start 键，改用 select）
                 self.state_cmd.skill_cmd = FSMCommand.POS_RESET
             elif self.remote_controller.is_button_pressed(KeyMap.B):            # Loco, B
                 self.state_cmd.skill_cmd = FSMCommand.LOCO
@@ -256,14 +258,14 @@ if __name__ == "__main__":
     config = Config()
     # Initialize DDS communication
     ChannelFactoryInitialize(0, config.net)
-    
+
     controller = Controller(config)
     
     while True:
         try:
             controller.run()
-            # Press the select key to exit
-            if controller.remote_controller.is_button_pressed(KeyMap.select):           # 按下select键退出
+            # Press the F2 key to exit (was select; select now triggers POS_RESET)
+            if controller.remote_controller.is_button_pressed(KeyMap.F2):               # 按下F2键退出
                 break
         except KeyboardInterrupt:
             break
@@ -275,4 +277,3 @@ if __name__ == "__main__":
     create_damping_cmd(controller.low_cmd)
     controller.send_cmd(controller.low_cmd)
     print("Exit")
-    

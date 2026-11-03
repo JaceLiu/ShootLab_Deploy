@@ -22,6 +22,7 @@
 - 相机性能与 RealSense 问题：`onboard/perception/camera/TROUBLESHOOTING.md`
 - LiDAR 发布频率：`onboard/docs/LIDAR_FREQ_TROUBLESHOOTING.md`
 - 感知架构图：`onboard/docs/PERCEPTION_ARCHITECTURE.md`
+- MID360→torso IMU 刚体动态标定采集：`tools/lidar_imu_calibration/README.md`
 
 ---
 

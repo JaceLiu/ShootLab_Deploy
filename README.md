@@ -122,7 +122,7 @@ python deploy_mujoco/deploy_mujoco.py --config-name mujoco_freekick
 | Mode Name           | Trigger Keys                  | Description                                                                              |
 |---------------------|-------------------------------|------------------------------------------------------------------------------------------|
 | **PassiveMode**     | F1 (real) / L2 release (sim)  | Damping protection mode                                                                  |
-| **FixedPose**       | Start                         | Position control reset to default joint values                                           |
+| **FixedPose**       | Select (real) / Start (sim)   | Position control reset to default joint values                                           |
 | **LocoMode**        | B                             | Stable walking control mode                                                              |
 | **AMP**             | A                             | AMP locomotion policy (enters run mode by default)                                       |
 | **FreeKick**           | R1                            | Ball-kicking/scoring policy (547-dim obs, 5-frame history, requires onboard LiDAR)      |
@@ -175,7 +175,7 @@ python deploy_mujoco/deploy_mujoco.py
    ```bash
    bash tools/start_tmux_layout.sh
    ```
-   Then in the `deploy_policy` pane, press **Start** to enter position control mode.
+   Then in the `deploy_policy` pane, press **Select** to enter position control mode.
 
    Alternatively, run the C++ bridge and Python policy manually:
    ```bash
@@ -192,6 +192,8 @@ python deploy_mujoco/deploy_mujoco.py
    **Simple mode (no Orin / direct Ethernet):** `python deploy_real/deploy_real.py`
 
 3. The same single-button mapping applies on the real robot: **A / B / D-pad DOWN / D-pad UP / R2 / R1**.
+   On the real robot, **FixedPose** is entered with **Select** and **terminate** is bound to **F2**
+   (the `Start` button is not used on this robot).
    Press **F1** at any time for damping protection (PassiveMode).
 
 4. **FreeKick policy (R1) — additional real-robot steps**: The FreeKick policy depends on onboard ball perception. Start the perception services before activating FreeKick; raw LiDAR/camera observations are fused by `onboard/perception/ball_fuser.py`, which publishes the final DDS topic `rt/ball_state`. Do **not** activate the FreeKick policy without the perception services running.
@@ -217,7 +219,7 @@ The current framework does not natively support deployment on G1 robots equipped
 ### 2. Mimic Policy Reliability Warning
 The Mimic policy does not guarantee 100% success rate, particularly on slippery/sandy surfaces. In case of robot instability:
 - Press `F1` to activate **PassiveMode** (damping protection)
-- Press `Select` to immediately terminate the control program
+- Press **F2** to immediately terminate the control program
 
 ### 3. Notes For The Retained Policies
 The default deploy entry points are now limited to `LocoMode / AMP / FreeKick / BeyondMimicMJ / StandUpMJ / Pinocchio1.6MJ`.

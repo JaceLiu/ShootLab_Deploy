@@ -194,19 +194,10 @@ livox_frame
 
 ---
 
-## 运行时参数调整（键盘）
+## 球心偏移调整
 
-服务运行时，**在同一终端**按下以下键可实时调整 `center_offset`（球心偏移量）：
-
-| 按键 | 效果 |
-|------|------|
-| `+` 或 `=` | center_offset += 0.005m |
-| `-` 或 `_` | center_offset -= 0.005m（最小 0） |
-| `0` | 重置为 0.050m |
-
-调整后 RViz2 中的红球位置会立即变化，用于标定偏移量是否正确。
-
-> 注意：需要 stdin 为 TTY（直接在终端运行），通过 SSH 的 `-T` 参数或后台运行时键盘控制自动禁用。
+当前检测器没有运行时键盘处理，也没有对应的 `center_offset` CLI 参数。
+球心径向偏移由固定半径球面残差自动优化，不需要手工调整。
 
 ---
 
@@ -216,22 +207,33 @@ livox_frame
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `reflect_thr` | `150` | 反射率阈值。球面反射率高，背景低；若候选点太少可适当降低 |
-| `min_points` | `4` | 候选点数下限，低于此值视为未检测到球 |
+| `reflect_thr` | `150` | 反射率阈值。普通足球回波可能低于此值，当前测试使用高反射足球 |
+| `min_points` | `5` | 全部候选点的数量下限，低于此值视为未检测到球 |
 | `min_range` | `0.2 m` | ROI 最小距离（过滤自身遮挡） |
-| `max_range` | `1.8 m` | ROI 最大距离 |
+| `max_range` | `10 m` | ROI 最大距离 |
 | `x_low / x_high` | `0 ~ 5 m` | 仅检测机器人正前方（MID360 X 轴方向） |
-| `z_low / z_high` | `±1.5 m` | MID360 坐标系下的高度范围 |
-| `center_offset` | `0.05 m` | 质心偏移修正量（可键盘实时调整，见上方） |
+| `z_low / z_high` | `±5 m` | MID360 坐标系下的高度范围 |
+| `y_low / y_high` | `±5 m` | MID360 坐标系下的横向范围 |
+| `center_offset` | `0.085 m` | 兼容参数；实际径向偏移由球面拟合自动优化 |
 | `r` (ball radius) | `0.115 m` | 球半径，影响 LS 拟合与球体 Marker 大小 |
+
+检测器按约 `0.12 m` 的邻接距离进行空间聚类，再对每个簇沿
+“LiDAR 原点→簇质心”方向优化已知半径球面的径向偏移。选簇时优先球面
+内点数，再比较簇点数；少于 3 个球面内点的簇不会发布。锁定目标后，
+只接受距离上一帧不超过 `0.45 m` 的簇；连续丢失 5 帧后才重新全局捕获。
 
 **调参建议流程：**
 
 1. 先在 RViz2 观察 `/ball_detector/cloud_all`，确认原始点云正常
 2. 观察 `/ball_detector/cloud_candidates`（黄色），若候选点很少或始终没有 → 降低 `reflect_thr`
 3. 候选点位置正确后，观察红球和绿球是否与球的实际位置一致
-4. 用 `+`/`-` 键微调 `center_offset` 直到绿球中心对准真实球心
+4. 确认选中的簇 `selected` 点数合理且 `surf_n` 不为零
 5. 确认 `rt/lidar_ball_state` 与 dashboard 显示一致，再通过 fuser 验证最终 `rt/ball_state`
+
+> FreeKick 真机部署必须使用 `freekick.yaml` 中的
+> `use_body_frame_ball: true`，因为真机 runtime 只填充 pelvis-frame
+> `ball_pos_b`。MuJoCo 仿真应使用 `false`，由 `deploy_mujoco` 填充
+> world-frame `ball_pos_w`。
 
 ---
 

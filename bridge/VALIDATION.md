@@ -22,12 +22,12 @@ Goal: validate safe command ownership and fallback behavior.
 Procedure:
 1. Start bridge (`bridge/python/deploy_bridge_py.py` first, then `bridge/build/cpp_bridge_main`)
 2. Start Python policy node
-3. Press `Start` to enter `FixedPose`
-4. Press `Select` or `F1`
+3. Press `Select` to enter `FixedPose`
+4. Press `F2` or `F1`
 
 Expected:
-- `Start` switches to `FixedPose`
-- `Select` / `F1` immediately produce damping/passive behavior
+- `Select` switches to `FixedPose`
+- `F2` / `F1` immediately produce damping/passive behavior
 - If the Python node is killed, the bridge times out and sends damping automatically
 
 ## Stage 3: LocoMode
@@ -43,7 +43,7 @@ Procedure:
 
 Expected:
 - `R1+A` enters `LocoMode` without multi-second lag
-- `Select` stops quickly
+- `F2` stops quickly
 - No prolonged stale-command gaps
 
 ## Stage 4: Optional heavier policies

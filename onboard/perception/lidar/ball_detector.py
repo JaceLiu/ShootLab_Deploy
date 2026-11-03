@@ -27,6 +27,7 @@ import termios
 import tty
 from typing import Dict
 import numpy as np
+from scipy.optimize import minimize_scalar
 
 import rclpy
 from rclpy.node import Node
@@ -57,7 +58,12 @@ from common.lidar_ball_debug_dds import LidarBallDebugPublisher
 # ---------------------------------------------------------------------------
 
 def estimate_ball_center_ls(points, r=0.115, offset=0.095, max_iter=10):
-    """Fit sphere of known radius r to point cloud. Returns center (3,)."""
+    """Estimate a fixed-radius sphere center along the sensor-to-cluster ray.
+
+    The visible sphere surface is sparse and one-sided, so a full unconstrained
+    sphere fit is poorly conditioned. The cluster centroid is on the near
+    surface; move radially outward to minimize known-radius residuals.
+    """
     center = points.mean(axis=0).astype(np.float64)
     dist   = np.linalg.norm(points - center, axis=1)
     core   = points[dist < 0.2]
@@ -66,8 +72,22 @@ def estimate_ball_center_ls(points, r=0.115, offset=0.095, max_iter=10):
     c = core.mean(axis=0).astype(np.float64) if len(core) > 0 else center
     norm_c = np.linalg.norm(c)
     if norm_c < 1e-6:
-        return c   # guard against divide-by-zero at the origin
-    pc = c + c / norm_c * offset
+        return c, 0   # guard against divide-by-zero at the origin
+
+    radial = c / norm_c
+
+    def shell_residual(radial_offset):
+        pc = c + radial * float(radial_offset)
+        point_dist = np.linalg.norm(points - pc[None, :], axis=1)
+        residual = point_dist - r
+        return float(np.mean(np.minimum(residual * residual, 0.02**2)))
+
+    result = minimize_scalar(
+        shell_residual,
+        bounds=(0.0, 2.0 * r),
+        method="bounded",
+    )
+    pc = c + radial * float(result.x)
     dists = np.linalg.norm(points - pc[None, :], axis=1)
     in_shell = (dists < (r + 0.01)) & (dists > (r - 0.01))
     in_n = int(in_shell.sum())
@@ -83,6 +103,33 @@ def estimate_ball_center_ls(points, r=0.115, offset=0.095, max_iter=10):
     #     if np.linalg.norm(dc) < 1e-5:
     #         break
     # return c.astype(np.float32)
+
+
+def cluster_candidate_points(points, max_gap=0.12):
+    """Split high-reflectivity candidates into spatially connected clusters."""
+    if len(points) == 0:
+        return []
+
+    pair_dist = np.linalg.norm(
+        points[:, None, :] - points[None, :, :],
+        axis=2,
+    )
+    unseen = set(range(len(points)))
+    clusters = []
+
+    while unseen:
+        seed = unseen.pop()
+        component = {seed}
+        stack = [seed]
+        while stack:
+            index = stack.pop()
+            neighbours = set(np.where(pair_dist[index] <= max_gap)[0].tolist()) & unseen
+            unseen -= neighbours
+            component |= neighbours
+            stack.extend(neighbours)
+        clusters.append(points[sorted(component)])
+
+    return clusters
 
 
 def _pc2_field_map(msg: PointCloud2) -> Dict[str, PointField]:
@@ -146,7 +193,7 @@ class BallDetector(Node):
 
         # ---- Detection params ----
         self.r           = 0.115   # ball radius [m]
-        self.reflect_thr = 190
+        self.reflect_thr = 150
         self.min_points  = 5
         self.max_range   = 10
         self.min_range   = 0.2
@@ -162,6 +209,10 @@ class BallDetector(Node):
         # ---- Temporal smoothing (Kalman filter) ----
         self.center_kf = CenterKalmanFilter()
         self._last_lidar_ts = None
+        self._last_cluster_center = None
+        self._cluster_miss_count = 0
+        self._cluster_reacquire_frames = 5
+        self._cluster_gate_m = 0.45
 
         # ---- Joint angles (updated from Unitree DDS rt/lowstate) ----
         self.q_wy   = 0.0
@@ -407,13 +458,65 @@ class BallDetector(Node):
                 self._rviz.publish_clouds(xyz_disp, cand, stamp)
             t_pub = time.perf_counter()
 
-            if cand.shape[0] < self.min_points:
+            candidate_clusters = cluster_candidate_points(cand)
+            selected_center = None
+            selected_size = 0
+            selected_shell = 0
+            candidate_centers = []
+            for cluster in candidate_clusters:
+                if cluster.shape[0] < self.min_points:
+                    continue
+                cluster_center, shell_count = estimate_ball_center_ls(
+                    cluster, r=self.r, offset=self.center_offset,
+                )
+                if shell_count < 3:
+                    continue
+                candidate_centers.append(
+                    (shell_count, cluster.shape[0], cluster_center)
+                )
+
+            if candidate_centers:
+                if self._last_cluster_center is not None:
+                    nearest = min(
+                        candidate_centers,
+                        key=lambda item: float(
+                            np.linalg.norm(
+                                item[2] - self._last_cluster_center
+                            )
+                        ),
+                    )
+                    gate_distance = float(
+                        np.linalg.norm(nearest[2] - self._last_cluster_center)
+                    )
+                    if gate_distance <= self._cluster_gate_m:
+                        selected_shell, selected_size, selected_center = nearest
+                        self._cluster_miss_count = 0
+                    else:
+                        self._cluster_miss_count += 1
+                        if self._cluster_miss_count >= self._cluster_reacquire_frames:
+                            selected_shell, selected_size, selected_center = max(
+                                candidate_centers,
+                                key=lambda item: (item[0], item[1]),
+                            )
+                            self._last_cluster_center = None
+                            self._cluster_miss_count = 0
+                else:
+                    selected_shell, selected_size, selected_center = max(
+                        candidate_centers,
+                        key=lambda item: (item[0], item[1]),
+                    )
+
+            if selected_center is not None:
+                self._last_cluster_center = selected_center.copy()
+
+            if selected_center is None:
                 self.center_kf.freeze_motion()
                 self._publish_invalid()
                 if _frame_n % 30 == 0:
                     age = "null" if self._joint_age_s is None else f"{self._joint_age_s:.3f}"
                     print(
-                        f"\r[lidar] no ball  n={n} hi={len(high_idx)} cand={cand.shape[0]}  "
+                        f"\r[lidar] no ball  n={n} hi={len(high_idx)} cand={cand.shape[0]} "
+                        f"clusters={len(candidate_clusters)}  "
                         f"waist_q=({self.q_wy:+.2f},{self.q_wr:+.2f},{self.q_wp:+.2f}) "
                         f"joint_age_s={age}  "
                         f"refl={1000*(t_pass1-t0):.0f}ms "
@@ -425,9 +528,8 @@ class BallDetector(Node):
                 _frame_n += 1
                 continue
 
-            center_lidar, in_n = estimate_ball_center_ls(
-                cand, r=self.r, offset=self.center_offset,
-            )
+            center_lidar = selected_center
+            in_n = selected_shell
             self._rviz.publish_ball_raw(center_lidar, stamp)
 
             now = time.time()
@@ -446,7 +548,7 @@ class BallDetector(Node):
                 center_filtered,
                 center_base,
                 base_y_bias=self.base_y_bias,
-                candidate_count=cand.shape[0],
+                candidate_count=selected_size,
                 in_shell_count=in_n,
                 valid=True,
             )
@@ -464,7 +566,8 @@ class BallDetector(Node):
                     f"raw=({center_lidar[0]:.3f},{center_lidar[1]:.3f},{center_lidar[2]:.3f})  "
                     f"waist_q=({self.q_wy:+.2f},{self.q_wr:+.2f},{self.q_wp:+.2f}) "
                     f"joint_age_s={age}  "
-                    f"surf_n={in_n} hi={len(high_idx)} cand={cand.shape[0]}  "
+                    f"surf_n={in_n} hi={len(high_idx)} cand={cand.shape[0]} "
+                    f"clusters={len(candidate_clusters)} selected={selected_size}  "
                     f"refl={1000*(t_pass1-t0):.0f}ms "
                     f"cand_xyz={1000*(t_pass2a-t_pass1):.0f}ms "
                     f"disp_xyz={1000*(t_pass2b-t_pass2a):.0f}ms "

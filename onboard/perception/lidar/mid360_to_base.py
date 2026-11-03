@@ -103,6 +103,13 @@ def compute_mid360_to_base_transform(q_wy=0.0, q_wr=0.0, q_wp=0.0, q_head=0.5934
         T_torso_head       @
         T_head_mid360
     )
+
+    # The Livox driver applies roll=180 deg to produce livox_frame. The URDF
+    # chain above describes the uncompensated sensor frame, so compensate that
+    # frame difference at the point-cloud boundary.
+    R_livox_to_mid360 = Rx(np.pi)
+    T_livox_to_mid360 = T_from_R_t(R_livox_to_mid360, np.zeros(3))
+    T_pelvis_mid360 = T_pelvis_mid360 @ T_livox_to_mid360
     
     return T_pelvis_mid360
 
