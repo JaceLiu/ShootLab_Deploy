@@ -45,7 +45,7 @@ Thumbs.db
 # Model weights and compiled binaries (large, hardware-specific).
 # Policy ONNX files live under policy/*/model/ and are distributed out-of-band.
 *.pt
-*.onnx
+#*.onnx
 *.engine
 # ...except the released FreeKick policy weights, which ship with the repo.
 !policy/robonaldo/model/policy-obs-aic.onnx
