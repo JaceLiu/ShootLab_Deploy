@@ -131,7 +131,7 @@ def main(cfg: DictConfig):
     simulation_dt = cfg.simulation_dt
     control_decimation = cfg.control_decimation
     tau_limit = np.array(cfg.tau_limit)
-        
+
     m = mujoco.MjModel.from_xml_path(xml_path)
     d = mujoco.MjData(m)
     m.opt.timestep = simulation_dt
@@ -167,7 +167,7 @@ def main(cfg: DictConfig):
 
     state_cmd = StateAndCmd(num_joints)
     policy_output = PolicyOutput(num_joints)
-    FSM_controller = FSM(state_cmd, policy_output)
+    FSM_controller = FSM(state_cmd, policy_output, runtime_mode="sim")
 
     log_cfg = cfg.get("logging", {})
     logger = None
@@ -204,9 +204,6 @@ def main(cfg: DictConfig):
                 if joystick.is_button_released(JoystickButton.L3):                                                    # Ghost toggle, L3
                     ghost_flags[0] = not ghost_flags[0]
                     print(f"[Ghost] {'ON' if ghost_flags[0] else 'OFF'}")
-                if joystick.is_button_released(JoystickButton.Y):                                                    # Print joint pos, Y
-                    _print_joint_pos(d.qpos[7:7+num_joints],
-                                     FSM_controller.cur_policy.name_str)
                 if joystick.is_button_released(JoystickButton.X):                                                        # Ball reset, X
                     if _reset_ball_state(
                         m, d, ball_body_id,
@@ -229,15 +226,10 @@ def main(cfg: DictConfig):
                         state_cmd.target_y_bias = float(np.clip(state_cmd.target_y_bias + 0.05, -1.50, 1.50))
                         print(f"\n[BIAS] target_y_bias = {state_cmd.target_y_bias:+.2f} m", flush=True)
 
-                # PASSIVE: safety command — L2 release
+                # PASSIVE always wins over a simultaneous skill-button edge.
                 if l2_just_released:                                                                                   # 阻尼保护, L2
                     state_cmd.skill_cmd = FSMCommand.PASSIVE
-
-                # All other skill commands: latched — only accepted when FSM has cleared the previous one.
-                # This prevents a fast START → policy switch sequence from overwriting POS_RESET before the FSM
-                # processes it, which would leave the current controller without a clean exit().
-                # elif state_cmd.skill_cmd == FSMCommand.INVALID:
-                if joystick.is_button_released(JoystickButton.START):                                              # 回 FixedPose, START
+                elif joystick.is_button_released(JoystickButton.START):                                            # 回 FixedPose, START
                     state_cmd.skill_cmd = FSMCommand.POS_RESET
                 elif joystick.is_button_released(JoystickButton.B):                                                # Loco, B
                     state_cmd.skill_cmd = FSMCommand.LOCO
@@ -245,6 +237,8 @@ def main(cfg: DictConfig):
                     state_cmd.skill_cmd = FSMCommand.CMD_AMP
                 elif joystick.is_button_released(JoystickButton.R1):                                               # FreeKick, R1
                     state_cmd.skill_cmd = FSMCommand.CMD_FREEKICK
+                elif joystick.is_button_released(JoystickButton.Y):                                               # ShootLab, Y
+                    state_cmd.skill_cmd = FSMCommand.CMD_SHOOTLAB
                 elif hat_just_pressed(0, -1):                                                                     # BeyondMimicMJ, D-pad DOWN
                     state_cmd.skill_cmd = FSMCommand.CMD_BEYONDMIMIC_MJ
                 elif hat_just_pressed(0, 1):                                                                      # StandUpMJ, D-pad UP
@@ -339,7 +333,3 @@ def main(cfg: DictConfig):
 
 if __name__ == "__main__":
     main()
-
-            
-
-        

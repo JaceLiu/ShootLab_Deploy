@@ -117,7 +117,7 @@ pip install -e .
 python deploy_mujoco/deploy_mujoco.py
 ```
 
-FreeKick 场景（含球，运行 FreeKick 策略时使用）：
+含球场景（运行 FreeKick 或 ShootLab V24/V34 策略时使用）：
 ```bash
 python deploy_mujoco/deploy_mujoco.py --config-name mujoco_freekick
 ```
@@ -131,7 +131,8 @@ python deploy_mujoco/deploy_mujoco.py --config-name mujoco_freekick
 | **FixedPose**      | Select（真机）/ Start（仿真）  | 位控恢复至默认关节值                                                 |
 | **LocoMode**       | B                             | 用于稳定行走的控制模式                                               |
 | **AMP**            | A                             | AMP 运动策略（默认进入 run 模式）                                    |
-| **FreeKick**          | R1                            | 踢球得分策略（547维obs，5帧历史，需配合机载雷达感知）               |
+| **FreeKick**       | R1                            | RoboNaldo 踢球策略（547维obs，5帧历史，需配合机载感知）              |
+| **ShootLabShoot**  | Y                             | V24 decoder/V34 迁移模型（430→16→109→29，5帧历史，单次执行5秒）      |
 | **BeyondMimicMJ**  | D-pad DOWN                    | 站立躺下模仿策略（MuJoCo 训练版，含参考动作跟踪）                   |
 | **StandUpMJ**      | D-pad UP                      | 躺下站起模仿策略（MuJoCo 训练版，含参考动作跟踪）                       |
 | **Pinocchio1.6MJ** | R2                            | `g1_result_pinocchio_1_6_mj.yaml` 对应的 MuJoCo 模仿策略            |
@@ -170,8 +171,9 @@ python deploy_mujoco/deploy_mujoco.py
    - `D-pad UP` -> StandUpMJ
    - `R2` -> Pinocchio1.6MJ
    - `R1` -> FreeKick
+   - `Y` -> ShootLab V24/V34
 
-6. `FreeKick` 需使用 `--config-name mujoco_freekick` 加载含球的仿真场景；`BeyondMimicMJ / StandUpMJ / Pinocchio1.6MJ` 之间支持直接互切
+6. `FreeKick` 和 `ShootLabShoot` 需使用 `--config-name mujoco_freekick` 加载含球场景；`BeyondMimicMJ / StandUpMJ / Pinocchio1.6MJ` 之间支持直接互切
 
 7. 任意时刻可**松开 L2** 进入阻尼保护模式（PassiveMode），按 `Start` 返回 FixedPose
 
@@ -202,14 +204,16 @@ python deploy_mujoco/deploy_mujoco.py
 
    **简单模式（直连 以太网，无 Orin）**：`python deploy_real/deploy_real.py`
 
-3. 后续单键切换与仿真保持一致：`A / B / D-pad DOWN / D-pad UP / R2 / R1`。
+3. 后续单键切换与仿真保持一致：`A / B / D-pad DOWN / D-pad UP / R2 / R1 / Y`。
    真机上 **FixedPose（位控）** 用 **Select** 键进入，**终止程序** 绑定在 **F2** 键
    （本机不使用 `Start` 键）。
    任意时刻可按 **F1** 进入阻尼保护模式（PassiveMode）。
 
 4. **FreeKick 踢球策略（R1）真机额外步骤**：FreeKick 策略依赖机载球感知，需在启动前先运行感知服务；LiDAR / camera raw 观测由 `onboard/perception/ball_fuser.py` 融合，并发布最终 DDS topic `rt/ball_state`。未启动感知服务时请勿激活 FreeKick 策略。
 
-5. **Sensor Dashboard**：启动 `tools/start_tmux_layout.sh` 后，在浏览器中打开 `http://<机器人IP>:8091/` 即可查看所有传感器位置（目标、各球感知源、偏置后坐标）及橙色"Current Bias"卡片中的当前偏置值。手动启动：
+5. **ShootLab V24/V34（Y）真机步骤**：先进入 FixedPose 或 LocoMode，并确认 `rt/ball_state` 有有效球；目标默认使用 `rt/target_state`，丢失时保持最近方向并用 IMU 航向补偿，首次无目标时回退到 `policy/shootlab/config/shootlab_shoot.yaml` 的固定 pelvis 目标。按 `Y` 后先 warmup 10 步，再执行 250 个 50 Hz step；5 秒后自动回 FixedPose。球感知连续失效超过 0.3 秒也会自动回 FixedPose，任何时刻可按 `F1` 立即进入阻尼保护。
+
+6. **Sensor Dashboard**：启动 `tools/start_tmux_layout.sh` 后，在浏览器中打开 `http://<机器人IP>:8091/` 即可查看所有传感器位置（目标、各球感知源、偏置后坐标）及橙色"Current Bias"卡片中的当前偏置值。手动启动：
    ```bash
    python onboard/perception/debug/sensor_dashboard.py
    ```
@@ -233,7 +237,7 @@ Mimic策略不保证100%成功率，特别是在湿滑/沙地等复杂地面上�
 - 按下 **F2** 键立即终止控制程序
 
 ### 3. 当前保留策略的真机提示
-当前部署入口已简化为 `LocoMode / AMP / FreeKick / BeyondMimicMJ / StandUpMJ / Pinocchio1.6MJ`。
+当前部署入口为 `LocoMode / AMP / FreeKick / ShootLabShoot / BeyondMimicMJ / StandUpMJ / Pinocchio1.6MJ`。
 
 ⚠️ **重要注意事项**：
 - **建议拆除手掌**：部分策略的原始训练未考虑手掌碰撞（作者的G1初始无手掌）

@@ -1,0 +1,25 @@
+{
+  "policy": "ShootLab V24 decoder / V34 kick curriculum",
+  "checkpoint_iteration": 30000,
+  "onnx": "policy-shootlab-v24-v34-30000.onnx",
+  "onnx_sha256": "8480dcab3ab13fe4f34d31cbb07e360ec409ee1d476c794797b968006062d54b",
+  "metadata": "policy-shootlab-v24-v34-30000_meta.json",
+  "metadata_sha256": "67d156324ad630f47257f9eef7826aab8efd3cba4ddbf78ab3fc3b81897fc8c8",
+  "test_vectors": "test_vectors.npz",
+  "test_vectors_sha256": "4ca8a15015f78f689c466e89b002addf5a305564e3e5f674b9bf7a0373d03463",
+  "contract": {
+    "policy_obs_dim": 430,
+    "self_obs_dim": 93,
+    "latent_dim": 16,
+    "joint_target_dim": 29,
+    "prior_residual_bound": 5.0
+  },
+  "source": {
+    "policy_checkpoint": "/workspace/instinct_workspace/ShootLab/logs/instinct_rl/g1_soccer_v24_v34_transfer/v24_decoder_v34_kickcurriculum_bound_gpu1_s42_30k_20261023_225406/model_30000.pt",
+    "policy_checkpoint_sha256": "dac0b200456ec8cca65f9531fd7957440116d32557ae7a72c9d08183979b8094",
+    "decoder_checkpoint": "/workspace/instinct_workspace/ShootLab/logs/instinct_rl/g1_beyondmimic_distill_v24/shoot_distill_v2/model_30000.pt",
+    "decoder_checkpoint_sha256": "8c8c43969322672c95c9c2182dfe5f2a621a403b9c883aed48a2234a836a8bc7",
+    "env_yaml": "/workspace/instinct_workspace/ShootLab/logs/instinct_rl/g1_soccer_v24_v34_transfer/v24_decoder_v34_kickcurriculum_bound_gpu1_s42_30k_20261023_225406/params/env.yaml",
+    "env_yaml_sha256": "a21c809fd62aa970ffeb8d6dc37f98a9d5cd0e3bdc9e75bfce64b737e225bc15"
+  }
+}

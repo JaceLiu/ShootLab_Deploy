@@ -216,7 +216,12 @@ class FreeKick(FSMState):
         "fixed_sim": 5.0,
     }
 
-    def __init__(self, state_cmd: StateAndCmd, policy_output: PolicyOutput):
+    def __init__(
+        self,
+        state_cmd: StateAndCmd,
+        policy_output: PolicyOutput,
+        runtime_mode: str | None = None,
+    ):
         super().__init__()
         self.state_cmd    = state_cmd
         self.policy_output = policy_output
@@ -285,6 +290,10 @@ class FreeKick(FSMState):
         # True on real robot: ball_pos is already in pelvis body frame (from DDS sensor).
         # False in simulation: ball_pos is in world frame and needs coordinate transform.
         self.use_body_frame_ball = bool(cfg.get("use_body_frame_ball", False))
+        if runtime_mode is not None:
+            if runtime_mode not in {"sim", "real"}:
+                raise ValueError(f"runtime_mode must be 'sim' or 'real', got {runtime_mode!r}")
+            self.use_body_frame_ball = runtime_mode == "real"
         # soccer_pos_b obs only: when invalid + ~zero sensor ball, substitute (e.g. avoid [0,0,0]).
         _lost_default = cfg.get("ball_obs_default_when_lost", None)
         self._ball_obs_default_when_lost = (
